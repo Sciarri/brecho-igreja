@@ -1,0 +1,135 @@
+1. Criação das Tabelas
+SQL
+
+-- Tabela de Doadores
+CREATE TABLE Doadores (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    contato VARCHAR(50)
+);
+
+-- Tabela de Beneficiários
+CREATE TABLE Beneficiarios (
+    id SERIAL PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    idade INT,
+    genero VARCHAR(10)
+);
+
+-- Tabela de Itens
+CREATE TABLE Itens (
+    id SERIAL PRIMARY KEY,
+    descricao VARCHAR(255) NOT NULL,
+    categoria VARCHAR(50),
+    quantidade INT NOT NULL
+);
+
+-- Tabela de Doações
+CREATE TABLE Doacoes (
+    id SERIAL PRIMARY KEY,
+    doador_id INT REFERENCES Doadores(id),
+    item_id INT REFERENCES Itens(id),
+    data_doacao DATE NOT NULL
+);
+
+-- Tabela de Distribuições
+CREATE TABLE Distribuicoes (
+    id SERIAL PRIMARY KEY,
+    beneficiario_id INT REFERENCES Beneficiarios(id),
+    item_id INT REFERENCES Itens(id),
+    data_distribuicao DATE NOT NULL
+);
+
+--Inserção de Dados
+SQL
+
+-- Inserir dados na tabela de Doadores
+INSERT INTO Doadores (nome, contato) VALUES
+('João Silva', 'joao@example.com'),
+('Maria Oliveira', 'maria@example.com');
+
+-- Inserir dados na tabela de Beneficiários
+INSERT INTO Beneficiarios (nome, idade, genero) VALUES
+('Carlos Souza', 25, 'Masculino'),
+('Ana Lima', 30, 'Feminino');
+
+-- Inserir dados na tabela de Itens
+INSERT INTO Itens (descricao, categoria, quantidade) VALUES
+('Camiseta', 'Roupas', 50),
+('Calça Jeans', 'Roupas', 30);
+
+-- Inserir dados na tabela de Doações
+INSERT INTO Doacoes (doador_id, item_id, data_doacao) VALUES
+(1, 1, '2024-09-01'),
+(2, 2, '2024-09-02');
+
+-- Inserir dados na tabela de Distribuições
+INSERT INTO Distribuicoes (beneficiario_id, item_id, data_distribuicao) VALUES
+(1, 1, '2024-09-10'),
+(2, 2, '2024-09-11');
+
+-- Consultas Básicas
+SQL
+
+-- Consulta para verificar o estoque de um item específico
+SELECT descricao, quantidade
+FROM Itens
+WHERE descricao = 'Camiseta';
+
+-- Consulta para listar doações de um doador específico
+SELECT D.nome, I.descricao, Do.data_doacao
+FROM Doadores D
+JOIN Doacoes Do ON D.id = Do.doador_id
+JOIN Itens I ON Do.item_id = I.id
+WHERE D.nome = 'João Silva';
+
+-- Consulta para listar distribuições para um beneficiário específico
+SELECT B.nome, I.descricao, Di.data_distribuicao
+FROM Beneficiarios B
+JOIN Distribuicoes Di ON B.id = Di.beneficiario_id
+JOIN Itens I ON Di.item_id = I.id
+WHERE B.nome = 'Carlos Souza';
+
+Desenvolvimento da Interface de Usuário
+Para a interface de usuário, você pode utilizar frameworks de desenvolvimento web como Django (Python), Flask (Python), ou Node.js (JavaScript). Aqui está um exemplo básico de como você pode começar com Flask:
+
+Exemplo de Código Flask
+Python
+
+from flask import Flask, render_template, request
+import psycopg2
+
+app = Flask(__name__)
+
+# Conexão com o banco de dados PostgreSQL
+conn = psycopg2.connect(
+    dbname="brecho_db",
+    user="seu_usuario",
+    password="sua_senha",
+    host="localhost"
+)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/doadores')
+def doadores():
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM Doadores")
+    doadores = cur.fetchall()
+    cur.close()
+    return render_template('doadores.html', doadores=doadores)
+
+@app.route('/adicionar_doador', methods=['POST'])
+def adicionar_doador():
+    nome = request.form['nome']
+    contato = request.form['contato']
+    cur = conn.cursor()
+    cur.execute("INSERT INTO Doadores (nome, contato) VALUES (%s, %s)", (nome, contato))
+    conn.commit()
+    cur.close()
+    return redirect('/doadores')
+
+if __name__ == '__main__':
+    app.run(debug=True)
